@@ -5,3 +5,47 @@
 html, body, #root { height: 100%; }
 
 .leaflet-container { height: 100%; width: 100%; }
+
+/* Custom animations */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.5);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(255, 165, 0, 0.8);
+    transform: scale(1.05);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Radial gradient utility */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-stops));
+}
+
+/* Smooth slider animations */
+input[type="range"] {
+  transition: all 0.2s ease;
+}
+
+input[type="range"]:hover {
+  transform: scale(1.02);
+}
+
+input[type="range"]:active {
+  transform: scale(0.98);
+}
