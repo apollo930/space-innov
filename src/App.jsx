@@ -8,21 +8,35 @@ import { motion, AnimatePresence } from 'framer-motion'
 const RED_DOT_SVG = `data:image/svg+xml;utf8,
 <svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' fill='%23ff3b30'/></svg>`
 
+const TARGET_SVG = `data:image/svg+xml;utf8,
+<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24'>
+  <circle cx='12' cy='12' r='10' fill='none' stroke='%234f46e5' stroke-width='3'/>
+  <circle cx='12' cy='12' r='6' fill='none' stroke='%234f46e5' stroke-width='2'/>
+  <circle cx='12' cy='12' r='2' fill='%234f46e5'/>
+</svg>`
+
 const impactIcon = new L.Icon({
   iconUrl: RED_DOT_SVG,
   iconSize: [24, 24],
   iconAnchor: [12, 12],
 })
 
-function MapClick({ onImpact }) {
+const targetIcon = new L.Icon({
+  iconUrl: TARGET_SVG,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+})
+
+function MapClick({ onLocationSelect }) {
   useMapEvents({
-    click(e) { onImpact(e.latlng) }
+    click(e) { onLocationSelect(e.latlng) }
   })
   return null
 }
 
 export default function App(){
   const [settings, setSettings] = useState({ diam:500, speed:17, angle:45, density:7874 })
+  const [selectedLocation, setSelectedLocation] = useState(null)
   const [impact, setImpact] = useState(null)
   const [results, setResults] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
@@ -37,14 +51,129 @@ export default function App(){
     const v = Number(s.speed)*1000
     const energy = 0.5 * mass * v * v
     const megatons = energy / 4.184e15
+    const gigatons = megatons / 1000
+    
+    // Basic impact calculations
     const craterDiameter = 0.02 * Math.pow(energy, 1/3.4)
+    const craterDepth = craterDiameter * 0.2
     const blastRadius = craterDiameter * 2.5
     const willAirburst = (d < 200 && s.speed > 11 && s.angle > 15)
-    return { lat: latlng.lat, lng: latlng.lng, mass, energy, megatons, craterDiameter, blastRadius, willAirburst }
+    
+    // Population density (people per km²) - simplified estimate based on global average
+    const popDensity = 57 // global average, varies by location
+    
+    // Crater effects
+    const craterArea = Math.PI * Math.pow(craterDiameter/2000, 2) // km²
+    const craterVaporized = Math.round(craterArea * popDensity)
+    
+    // Fireball calculations
+    const fireballRadius = Math.pow(energy/4.184e12, 0.4) * 1000 // meters
+    const fireballArea = Math.PI * Math.pow(fireballRadius/1000, 2) // km²
+    const fireballDeaths = Math.round(fireballArea * popDensity * 0.9) // 90% fatality in fireball
+    const burns3rdDegree = Math.round(fireballArea * popDensity * 0.05)
+    const burns2ndDegree = Math.round(fireballArea * popDensity * 0.1)
+    const treeFires = fireballRadius * 10 // trees catch fire much further out
+    
+    // Shock wave calculations
+    const shockWaveDecibels = Math.min(300, 180 + 20 * Math.log10(megatons))
+    const shockWaveRadius = Math.pow(energy/4.184e12, 0.33) * 2000 // meters
+    const shockWaveArea = Math.PI * Math.pow(shockWaveRadius/1000, 2) // km²
+    const shockWaveDeaths = Math.round(shockWaveArea * popDensity * 0.3)
+    const lungDamageRadius = shockWaveRadius * 0.3
+    const eardrumRadius = shockWaveRadius * 0.4
+    const buildingCollapseRadius = shockWaveRadius * 0.7
+    const homeCollapseRadius = shockWaveRadius * 0.9
+    
+    // Wind blast calculations
+    const windSpeed = Math.pow(energy/4.184e12, 0.25) * 500 // mph
+    const windRadius = Math.pow(energy/4.184e12, 0.3) * 1500 // meters
+    const windArea = Math.PI * Math.pow(windRadius/1000, 2) // km²
+    const windDeaths = Math.round(windArea * popDensity * 0.4)
+    const jupiterWindRadius = windRadius * 0.2
+    const leveledRadius = windRadius * 0.4
+    const tornadoRadius = windRadius * 0.7
+    const treeKnockRadius = windRadius * 1.2
+    
+    // Earthquake calculations
+    const earthquakeMagnitude = Math.min(10, 4 + Math.log10(megatons))
+    const earthquakeRadius = Math.pow(10, earthquakeMagnitude) * 10 // meters felt
+    const earthquakeArea = Math.PI * Math.pow(earthquakeRadius/1000, 2) // km²
+    const earthquakeDeaths = Math.round(earthquakeArea * popDensity * 0.001) // much lower fatality rate
+    
+    // Impact frequency (very rough estimates)
+    const impactFrequency = megatons > 10000 ? 65000000 : 
+                           megatons > 1000 ? 650000 :
+                           megatons > 100 ? 65000 :
+                           megatons > 10 ? 6500 :
+                           megatons > 1 ? 650 : 65
+    
+    // Energy comparisons
+    const hurricaneComparison = energy / (1.5e16) // hurricane releases ~1.5e16 J per day
+    
+    return { 
+      lat: latlng.lat, 
+      lng: latlng.lng, 
+      mass, 
+      energy, 
+      megatons, 
+      gigatons,
+      craterDiameter, 
+      craterDepth,
+      blastRadius, 
+      willAirburst,
+      impactSpeed: v * 2.237, // convert to mph
+      
+      // Crater effects
+      craterVaporized,
+      
+      // Fireball effects
+      fireballRadius,
+      fireballDeaths,
+      burns3rdDegree,
+      burns2ndDegree,
+      treeFires,
+      
+      // Shock wave effects
+      shockWaveDecibels,
+      shockWaveDeaths,
+      lungDamageRadius,
+      eardrumRadius,
+      buildingCollapseRadius,
+      homeCollapseRadius,
+      
+      // Wind effects
+      windSpeed,
+      windDeaths,
+      jupiterWindRadius,
+      leveledRadius,
+      tornadoRadius,
+      treeKnockRadius,
+      
+      // Earthquake effects
+      earthquakeMagnitude,
+      earthquakeDeaths,
+      earthquakeRadius,
+      
+      // Comparisons
+      impactFrequency,
+      hurricaneComparison
+    }
   }
 
-  const handleImpact = (latlng) => {
-    setImpact(latlng)
+  const handleMapClick = (latlng) => {
+    // Only allow location selection if not currently animating
+    if (!isAnimating && !showExplosion) {
+      setSelectedLocation(latlng)
+      // Clear previous results when selecting new location
+      setImpact(null)
+      setResults(null)
+    }
+  }
+
+  const handleLaunch = () => {
+    if (!selectedLocation) return
+    
+    setImpact(selectedLocation)
     setIsAnimating(true)
     setShowExplosion(false)
     
@@ -55,7 +184,7 @@ export default function App(){
       
       // Show explosion briefly, then calculate results
       setTimeout(() => {
-        const res = computeImpact(latlng)
+        const res = computeImpact(selectedLocation)
         setResults(res)
         setShowExplosion(false)
       }, 500)
@@ -79,8 +208,8 @@ export default function App(){
 
   const handleSettingsChange = (partial) => {
     setSettings(prev => ({...prev,...partial}))
-    if (impact) {
-      const res = computeImpact(impact, {...settings,...partial})
+    if (selectedLocation && results) {
+      const res = computeImpact(selectedLocation, {...settings,...partial})
       setResults(res)
     }
   }
@@ -96,12 +225,70 @@ export default function App(){
           transition={{ duration: 0.6 }}
         >
           <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-            Asteroid Launcher
+            Meteoroid Launcher
           </h1>
-          <p className="text-sm text-gray-500">Click anywhere on the map to simulate an impact.</p>
+          <p className="text-sm text-gray-500">
+            {selectedLocation 
+              ? "Target selected! Click Launch to start impact simulation." 
+              : "Click anywhere on the map to select a target location."
+            }
+          </p>
         </motion.div>
 
         <Controls settings={settings} onChange={handleSettingsChange} />
+
+        {/* Target Location Display */}
+        <AnimatePresence>
+          {selectedLocation && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: -10 }}
+              className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-4 rounded-lg"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-blue-800 flex items-center gap-2">
+                    🎯 Target Selected
+                  </div>
+                  <div className="text-sm text-blue-600">
+                    Lat: {selectedLocation.lat.toFixed(3)}, Lng: {selectedLocation.lng.toFixed(3)}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedLocation(null)}
+                  className="text-blue-400 hover:text-blue-600 transition-colors"
+                  title="Clear target"
+                >
+                  ✕
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Launch Button */}
+        <AnimatePresence>
+          {selectedLocation && !isAnimating && !showExplosion && (
+            <motion.button
+              onClick={handleLaunch}
+              disabled={!selectedLocation}
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 
+                         text-white font-bold py-4 px-6 rounded-lg shadow-lg transition-all duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                         text-lg flex items-center justify-center gap-3"
+            >
+              <span className="text-2xl">🚀</span>
+              LAUNCH METEOROID
+              <span className="text-2xl">💥</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {(isAnimating || showExplosion) && (
@@ -126,7 +313,7 @@ export default function App(){
                 />
                 <div>
                   <div className="font-bold text-orange-800">
-                    {showExplosion ? 'IMPACT!' : 'Impact Incoming!'}
+                    {showExplosion ? 'IMPACT!' : 'Meteoroid Incoming!'}
                   </div>
                   <div className="text-sm text-orange-600">
                     {showExplosion ? 'Explosion in progress...' : 'Calculating devastation...'}
@@ -170,9 +357,21 @@ export default function App(){
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community" 
           />
-          <MapClick onImpact={handleImpact} />
+          <MapClick onLocationSelect={handleMapClick} />
           
-          {/* Animated Asteroid */}
+          {/* Target Location Marker */}
+          {selectedLocation && !impact && (
+            <Marker position={[selectedLocation.lat, selectedLocation.lng]} icon={targetIcon}>
+              <Popup>
+                <strong>🎯 Target Location</strong><br />
+                Lat: {selectedLocation.lat.toFixed(3)}<br />
+                Lng: {selectedLocation.lng.toFixed(3)}<br />
+                <em>Click Launch to start impact simulation</em>
+              </Popup>
+            </Marker>
+          )}
+
+          {/* Animated Meteoroid */}
           {isAnimating && impact && (() => {
             const targetPos = getScreenPosition(impact)
             return (
@@ -196,7 +395,7 @@ export default function App(){
                 }}
               >
                 <div className="w-5 h-5 bg-gradient-radial from-orange-400 via-red-500 to-orange-600 rounded-full shadow-lg animate-pulse">
-                  {/* Asteroid trail */}
+                  {/* Meteoroid trail */}
                   <motion.div
                     className="absolute -top-8 left-1/2 w-1 h-8 bg-gradient-to-t from-orange-400 to-transparent"
                     style={{ transform: 'translateX(-50%)' }}
@@ -467,9 +666,14 @@ export default function App(){
           transition={{ delay: 1, duration: 0.6 }}
         >
           <div className="flex items-center gap-2">
-            <span className="text-lg">🎯</span>
+            <span className="text-lg">
+              {selectedLocation ? "🚀" : "🎯"}
+            </span>
             <small className="text-xs text-gray-600 font-medium">
-              Click the map to place an impact. Adjust settings in the left panel.
+              {selectedLocation 
+                ? "Target selected! Click Launch in the left panel to begin impact simulation."
+                : "Click the map to select a target location, then adjust settings and launch."
+              }
             </small>
           </div>
         </motion.div>

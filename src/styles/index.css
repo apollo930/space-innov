@@ -6,6 +6,11 @@ html, body, #root { height: 100%; }
 
 .leaflet-container { height: 100%; width: 100%; }
 
+/* Custom tab styling */
+.border-b-3 {
+  border-bottom-width: 3px;
+}
+
 /* Custom animations */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
