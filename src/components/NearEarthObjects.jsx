@@ -121,6 +121,53 @@ export default function NearEarthObjects({ onSelectAsteroid }) {
     }
   }
 
+  const calculateDeflection = (asteroid) => {
+    // Calculate the minimum velocity change needed to miss Earth
+    // Assuming we need to change trajectory by Earth's radius at closest approach
+    const earthRadius = 6371 // km
+    const approachDistance = asteroid.nearestDistance // km
+    const timeToApproach = Math.abs(asteroid.approachDate - new Date()) / (1000 * 60 * 60 * 24) // days
+    
+    // Required deflection angle (small angle approximation)
+    const deflectionAngle = earthRadius / approachDistance // radians
+    
+    // Required velocity change (delta-v)
+    const currentVelocity = asteroid.speed * 1000 // m/s
+    const deltaV = currentVelocity * deflectionAngle // m/s
+    
+    // Mass of asteroid
+    const volume = (4/3) * Math.PI * Math.pow(asteroid.diameter/2, 3) // m³
+    const mass = asteroid.density * volume // kg
+    
+    // Energy required for deflection
+    const deflectionEnergy = 0.5 * mass * deltaV * deltaV // Joules
+    const deflectionMegatons = deflectionEnergy / 4.184e15
+    
+    // Compare to nuclear weapons
+    const tsarBomba = 50 // megatons (largest bomb ever tested)
+    const littleBoy = 0.015 // megatons (Hiroshima bomb)
+    const modernNuke = 0.3 // megatons (typical modern warhead)
+    
+    let bombComparison = ''
+    if (deflectionMegatons >= tsarBomba) {
+      bombComparison = `${(deflectionMegatons / tsarBomba).toFixed(1)}x Tsar Bomba`
+    } else if (deflectionMegatons >= modernNuke) {
+      bombComparison = `${(deflectionMegatons / modernNuke).toFixed(1)}x modern nukes`
+    } else if (deflectionMegatons >= littleBoy) {
+      bombComparison = `${(deflectionMegatons / littleBoy).toFixed(1)}x Hiroshima bombs`
+    } else {
+      bombComparison = `${(deflectionMegatons * 1000).toFixed(1)} kilotons`
+    }
+    
+    return {
+      deltaV: deltaV.toFixed(2),
+      energy: deflectionEnergy,
+      megatons: deflectionMegatons,
+      bombComparison,
+      timeToApproach: timeToApproach.toFixed(0)
+    }
+  }
+
   const handleSimulateImpact = (asteroid) => {
     const settings = {
       diam: asteroid.diameter,
@@ -228,12 +275,25 @@ export default function NearEarthObjects({ onSelectAsteroid }) {
                           {asteroid.hazardLevel}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
                         <div>📏 {Math.round(asteroid.diameter).toLocaleString()}m diameter</div>
                         <div>⚡ {asteroid.speed.toFixed(1)} km/s</div>
                         <div>🌍 {(asteroid.nearestDistance / 1000).toFixed(0)}k km closest</div>
                         <div>📅 {asteroid.approachDate.toLocaleDateString()}</div>
                       </div>
+                      {(() => {
+                        const deflection = calculateDeflection(asteroid)
+                        return (
+                          <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs">
+                            <div className="font-medium text-blue-800 mb-1">🚀 Deflection Required:</div>
+                            <div className="grid grid-cols-1 gap-1 text-blue-700">
+                              <div>Δv: {deflection.deltaV} m/s</div>
+                              <div>Energy: {deflection.bombComparison}</div>
+                              <div>Time window: {deflection.timeToApproach} days</div>
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                     <button
                       onClick={() => handleSimulateImpact(asteroid)}
