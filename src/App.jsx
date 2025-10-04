@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle } from 're
 import L from 'leaflet'
 import Controls from './components/Controls'
 import ResultCard from './components/ResultCard'
+import NearEarthObjects from './components/NearEarthObjects'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const RED_DOT_SVG = `data:image/svg+xml;utf8,
@@ -35,7 +36,7 @@ function MapClick({ onLocationSelect }) {
 }
 
 export default function App(){
-  const [settings, setSettings] = useState({ diam:500, speed:17, angle:45, density:7874 })
+  const [settings, setSettings] = useState({ diam:500, speed:17, angle:45, density:3500 })
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [impact, setImpact] = useState(null)
   const [results, setResults] = useState(null)
@@ -214,6 +215,33 @@ export default function App(){
     }
   }
 
+  const handleSelectAsteroid = (asteroid, asteroidSettings) => {
+    // Update settings to match the selected asteroid
+    setSettings(asteroidSettings)
+    
+    // Clear any existing selection
+    setSelectedLocation(null)
+    setImpact(null)
+    setResults(null)
+    
+    // Auto-select a random impact location (could be made selectable later)
+    const randomLat = (Math.random() - 0.5) * 160 // -80 to 80 latitude
+    const randomLng = (Math.random() - 0.5) * 360 // -180 to 180 longitude
+    const impactLocation = { lat: randomLat, lng: randomLng }
+    
+    setSelectedLocation(impactLocation)
+    
+    // Show a notification about the asteroid selection
+    console.log(`Selected asteroid: ${asteroid.name} for impact simulation`)
+  }
+
+  const handleReset = () => {
+    setSettings({ diam: 500, speed: 17, angle: 45, density: 3500 })
+    setSelectedLocation(null)
+    setImpact(null)
+    setResults(null)
+  }
+
   const mapCenter = useMemo(()=>[20,0],[])
 
   return (
@@ -235,7 +263,9 @@ export default function App(){
           </p>
         </motion.div>
 
-        <Controls settings={settings} onChange={handleSettingsChange} />
+        <Controls settings={settings} onChange={handleSettingsChange} onReset={handleReset} />
+
+        <NearEarthObjects onSelectAsteroid={handleSelectAsteroid} />
 
         {/* Target Location Display */}
         <AnimatePresence>
@@ -255,13 +285,27 @@ export default function App(){
                     Lat: {selectedLocation.lat.toFixed(3)}, Lng: {selectedLocation.lng.toFixed(3)}
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedLocation(null)}
-                  className="text-blue-400 hover:text-blue-600 transition-colors"
-                  title="Clear target"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedLocation(null)}
+                    className="text-blue-400 hover:text-blue-600 transition-colors"
+                    title="Clear target"
+                  >
+                    ✕
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSettings({ diam: 500, speed: 17, angle: 45, density: 3500 })
+                      setSelectedLocation(null)
+                      setImpact(null)
+                      setResults(null)
+                    }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors text-sm px-2 py-1 rounded border border-gray-300 hover:border-gray-400"
+                    title="Reset all settings"
+                  >
+                    🔄 Reset
+                  </button>
+                </div>
               </div>
             </motion.div>
           )}

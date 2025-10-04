@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 
-export default function Controls({ settings, onChange }){
+export default function Controls({ settings, onChange, onReset }){
   return (
     <motion.div 
       className="space-y-3"
@@ -86,11 +86,25 @@ export default function Controls({ settings, onChange }){
         </div>
         <select value={settings.density} onChange={e=>onChange({density: Number(e.target.value)})} 
           className="w-full border rounded p-2 bg-white hover:bg-gray-50 transition-colors duration-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-          <option value={7874}>Iron (7,874 kg/m³)</option>
-          <option value={3000}>Chondritic rock (3,000 kg/m³)</option>
-          <option value={1000}>Icy (1,000 kg/m³)</option>
+          <option value={3500}>Ordinary Chondrite (3,500 kg/m³)</option>
+          <option value={3200}>Carbonaceous Chondrite (3,200 kg/m³)</option>
+          <option value={7800}>Iron Meteorite (7,800 kg/m³)</option>
+          <option value={5200}>Stony-Iron (5,200 kg/m³)</option>
+          <option value={2700}>Achondrite (2,700 kg/m³)</option>
         </select>
       </motion.label>
+
+      {/* Reset Button */}
+      <motion.button
+        onClick={onReset}
+        className="w-full mt-4 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg border border-gray-300 transition-all duration-200 flex items-center justify-center gap-2 text-sm font-medium"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 300 }}
+      >
+        <span>🔄</span>
+        Reset to Defaults
+      </motion.button>
     </motion.div>
   )
 }
