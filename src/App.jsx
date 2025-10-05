@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle } from 'react-leaflet'
 import L from 'leaflet'
-import Controls from './components/Controls'
-import ResultCard from './components/ResultCard'
+import Controls from './components/CompactControls'
+import ResultCard from './components/EnhancedResultCard'
 import NearEarthObjects from './components/NearEarthObjects'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -449,23 +449,54 @@ export default function App(){
   const mapCenter = useMemo(()=>[20,0],[])
 
   return (
-    <div className="h-screen flex flex-col md:flex-row">
-      <aside className="w-full md:w-96 bg-white border-r p-4 flex flex-col gap-4">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-red-600 bg-clip-text text-transparent">
-            Meteoroid Launcher
-          </h1>
-          <p className="text-sm text-gray-500">
-            {selectedLocation 
-              ? "Target selected! Click Launch to start impact simulation." 
-              : "Click anywhere on the map to select a target location."
-            }
-          </p>
-        </motion.div>
+    <div className="min-h-screen h-screen flex flex-col md:flex-row relative overflow-hidden">
+      {/* Animated background particles */}
+      <div className="absolute inset-0 pointer-events-none z-0">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-1 h-1 bg-white rounded-full opacity-30"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`
+            }}
+            animate={{
+              y: [0, -10, 0],
+              opacity: [0.1, 0.6, 0.1]
+            }}
+            transition={{
+              duration: 3 + Math.random() * 2,
+              repeat: Infinity,
+              delay: Math.random() * 2
+            }}
+          />
+        ))}
+      </div>
+      
+      <aside className="w-full md:w-80 lg:w-96 bg-gradient-to-br from-slate-50 via-white to-blue-50 border-r border-slate-200 flex flex-col relative z-10 backdrop-blur-sm overflow-hidden">
+        <div className="p-4 flex-shrink-0">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, type: "spring" }}
+            className="relative"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-red-600/10 rounded-lg blur-xl" />
+            <div className="relative bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-orange-200/50">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-500 via-red-500 to-purple-600 bg-clip-text text-transparent">
+                🌌 Meteoroid Launcher
+              </h1>
+              <p className="text-xs text-gray-600 mt-1">
+                {selectedLocation 
+                  ? "🎯 Target locked! Ready for impact simulation." 
+                  : "Click anywhere on Earth to target your asteroid impact."
+                }
+              </p>
+            </div>
+          </motion.div>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 pt-0 space-y-4">
 
         <Controls settings={settings} onChange={handleSettingsChange} onReset={handleReset} />
 
@@ -515,26 +546,107 @@ export default function App(){
           )}
         </AnimatePresence>
 
-        {/* Launch Button */}
+        {/* Enhanced Launch Button */}
         <AnimatePresence>
           {selectedLocation && !isAnimating && !showExplosion && (
-            <motion.button
-              onClick={handleLaunch}
-              disabled={!selectedLocation}
+            <motion.div
               initial={{ opacity: 0, scale: 0.8, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8, y: 20 }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 
-                         text-white font-bold py-4 px-6 rounded-lg shadow-lg transition-all duration-200
-                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                         text-lg flex items-center justify-center gap-3"
+              className="relative"
             >
-              <span className="text-2xl">🚀</span>
-              LAUNCH METEOROID
-              <span className="text-2xl">💥</span>
-            </motion.button>
+              {/* Glow effect background */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg blur-md opacity-75"
+                animate={{
+                  opacity: [0.5, 0.8, 0.5]
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+              
+              <motion.button
+                onClick={handleLaunch}
+                disabled={!selectedLocation}
+                whileHover={{ 
+                  scale: 1.05,
+                  boxShadow: "0 20px 40px rgba(239, 68, 68, 0.4)"
+                }}
+                whileTap={{ scale: 0.98 }}
+                className="relative w-full bg-gradient-to-r from-red-500 via-orange-500 to-red-600 hover:from-red-600 hover:via-orange-600 hover:to-red-700
+                           text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300
+                           border border-red-400/50 backdrop-blur-sm
+                           text-base flex items-center justify-center gap-2 group overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, #ef4444 0%, #f97316 25%, #dc2626 50%, #ea580c 75%, #dc2626 100%)',
+                  backgroundSize: '200% 200%'
+                }}
+              >
+                {/* Animated background gradient */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  animate={{
+                    x: ['-100%', '100%']
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                />
+                
+                <motion.span 
+                  className="text-xl"
+                  animate={{ rotate: [0, 10, 0] }}
+                  transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
+                >
+                  🚀
+                </motion.span>
+                
+                <span className="relative z-10 tracking-wide">LAUNCH IMPACT</span>
+                
+                <motion.span 
+                  className="text-xl"
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    rotate: [0, 15, 0]
+                  }}
+                  transition={{ duration: 0.8, repeat: Infinity, repeatDelay: 0.5 }}
+                >
+                  💥
+                </motion.span>
+                
+                {/* Particle effects on hover */}
+                <motion.div
+                  className="absolute inset-0 pointer-events-none"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                >
+                  {[...Array(6)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-1 h-1 bg-white rounded-full"
+                      style={{
+                        left: `${20 + i * 10}%`,
+                        top: '50%'
+                      }}
+                      animate={{
+                        y: [-5, 5, -5],
+                        opacity: [0.5, 1, 0.5]
+                      }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        delay: i * 0.1
+                      }}
+                    />
+                  ))}
+                </motion.div>
+              </motion.button>
+            </motion.div>
           )}
         </AnimatePresence>
 
@@ -622,14 +734,7 @@ export default function App(){
           )}
         </AnimatePresence>
 
-        <motion.div 
-          className="mt-auto text-xs text-gray-400"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.6 }}
-        >
-          Educational demo — approximate values only.
-        </motion.div>
+        </div>
       </aside>
 
       <main className="flex-1 relative">
@@ -656,39 +761,134 @@ export default function App(){
           {isAnimating && impact && (() => {
             const targetPos = getScreenPosition(impact)
             return (
-              <motion.div
-                className="absolute z-[1000] pointer-events-none"
-                style={{
-                  left: '10%',
-                  top: '5%',
-                  width: '20px',
-                  height: '20px'
-                }}
-                animate={{
-                  left: targetPos.x,
-                  top: targetPos.y,
-                  scale: [0.3, 1.2, 0.8],
-                  rotate: [0, 720]
-                }}
-                transition={{
-                  duration: 1,
-                  ease: "easeIn"
-                }}
-              >
-                <div className="w-5 h-5 bg-gradient-radial from-orange-400 via-red-500 to-orange-600 rounded-full shadow-lg animate-pulse">
-                  {/* Meteoroid trail */}
+              <>
+                {/* Main asteroid with 3D effects */}
+                <motion.div
+                  className="absolute z-[1000] pointer-events-none"
+                  style={{
+                    left: '10%',
+                    top: '5%',
+                    width: '30px',
+                    height: '30px'
+                  }}
+                  animate={{
+                    left: targetPos.x,
+                    top: targetPos.y,
+                    scale: [0.2, 1.5, 1],
+                    rotate: [0, 720]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    ease: "easeIn"
+                  }}
+                >
+                  {/* Main asteroid body with glow */}
+                  <motion.div 
+                    className="relative w-8 h-8 rounded-full shadow-2xl"
+                    style={{
+                      background: 'radial-gradient(circle at 30% 30%, #ff6b35, #8b2500, #2d0a00)',
+                      boxShadow: '0 0 20px #ff6b35, 0 0 40px #ff6b35aa, inset -3px -3px 6px rgba(0,0,0,0.3)'
+                    }}
+                    animate={{
+                      boxShadow: [
+                        '0 0 20px #ff6b35, 0 0 40px #ff6b35aa',
+                        '0 0 30px #ff4500, 0 0 60px #ff4500aa',
+                        '0 0 20px #ff6b35, 0 0 40px #ff6b35aa'
+                      ]
+                    }}
+                    transition={{ duration: 0.3, repeat: Infinity, repeatType: 'reverse' }}
+                  >
+                    {/* Surface details */}
+                    <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-black opacity-30" />
+                    <div className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-black opacity-20" />
+                  </motion.div>
+                  
+                  {/* Atmospheric heating glow */}
                   <motion.div
-                    className="absolute -top-8 left-1/2 w-1 h-8 bg-gradient-to-t from-orange-400 to-transparent"
-                    style={{ transform: 'translateX(-50%)' }}
-                    animate={{ opacity: [0, 1, 0] }}
-                    transition={{ duration: 0.5, repeat: Infinity }}
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(255,107,53,0.6) 0%, rgba(255,69,0,0.3) 50%, transparent 70%)',
+                      transform: 'scale(2)'
+                    }}
+                    animate={{
+                      opacity: [0.3, 0.8, 0.3],
+                      scale: [1.5, 2.5, 1.5]
+                    }}
+                    transition={{ duration: 0.2, repeat: Infinity }}
                   />
-                </div>
-              </motion.div>
+                  
+                  {/* Particle trail */}
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-1 h-1 rounded-full"
+                      style={{
+                        background: `hsl(${15 + i * 10}, 100%, ${70 - i * 10}%)`,
+                        left: '50%',
+                        top: '50%',
+                        transform: 'translate(-50%, -50%)'
+                      }}
+                      animate={{
+                        x: [0, -20 - i * 5],
+                        y: [0, 10 + i * 3],
+                        opacity: [0, 1, 0],
+                        scale: [0, 1, 0]
+                      }}
+                      transition={{
+                        duration: 0.3,
+                        repeat: Infinity,
+                        delay: i * 0.05,
+                        ease: "easeOut"
+                      }}
+                    />
+                  ))}
+                  
+                  {/* Sonic boom shockwave */}
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-2 border-blue-300"
+                    animate={{
+                      scale: [1, 3],
+                      opacity: [0.8, 0]
+                    }}
+                    transition={{
+                      duration: 0.4,
+                      repeat: Infinity,
+                      repeatDelay: 0.2
+                    }}
+                  />
+                </motion.div>
+                
+                {/* Atmospheric entry streak */}
+                <motion.div
+                  className="absolute z-[999] pointer-events-none"
+                  style={{
+                    left: '8%',
+                    top: '3%',
+                    width: '200px',
+                    height: '4px'
+                  }}
+                  animate={{
+                    left: `calc(${targetPos.x} - 100px)`,
+                    top: `calc(${targetPos.y} - 2px)`,
+                    rotate: [45, 45]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    ease: "easeIn"
+                  }}
+                >
+                  <div 
+                    className="w-full h-full rounded-full"
+                    style={{
+                      background: 'linear-gradient(90deg, transparent 0%, #ff6b35aa 20%, #ff4500 50%, #ff6b35aa 80%, transparent 100%)'
+                    }}
+                  />
+                </motion.div>
+              </>
             )
           })()}
           
-          {/* Explosion Effect */}
+          {/* Enhanced Explosion Effect */}
           {showExplosion && impact && (() => {
             const targetPos = getScreenPosition(impact)
             return (
@@ -700,26 +900,111 @@ export default function App(){
                   transform: 'translate(-50%, -50%)'
                 }}
               >
+                {/* Main explosion fireball */}
                 <motion.div
-                  className="w-20 h-20 bg-gradient-radial from-white via-yellow-400 to-orange-600 rounded-full"
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: 'radial-gradient(circle, #ffffff 0%, #ffff00 20%, #ff6600 40%, #ff0000 70%, #8b0000 100%)',
+                    width: '60px',
+                    height: '60px',
+                    left: '-30px',
+                    top: '-30px'
+                  }}
                   animate={{
-                    scale: [0, 4, 2],
+                    scale: [0, 8, 4],
                     opacity: [1, 0.8, 0]
                   }}
                   transition={{
-                    duration: 0.5,
+                    duration: 0.8,
                     ease: "easeOut"
                   }}
                 />
+                
+                {/* Secondary shockwave */}
+                <motion.div
+                  className="absolute inset-0 rounded-full border-4 border-orange-400"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    left: '-20px',
+                    top: '-20px'
+                  }}
+                  animate={{
+                    scale: [0, 12],
+                    opacity: [0.8, 0],
+                    borderWidth: [4, 0]
+                  }}
+                  transition={{
+                    duration: 1,
+                    ease: "easeOut",
+                    delay: 0.1
+                  }}
+                />
+                
                 {/* Flash effect */}
                 <motion.div
-                  className="absolute inset-0 w-32 h-32 -top-6 -left-6 bg-white rounded-full"
+                  className="absolute inset-0 rounded-full bg-white"
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    left: '-40px',
+                    top: '-40px'
+                  }}
                   animate={{
-                    scale: [0, 6],
+                    scale: [0, 10],
                     opacity: [1, 0]
                   }}
                   transition={{
-                    duration: 0.2
+                    duration: 0.15
+                  }}
+                />
+                
+                {/* Particle debris */}
+                {[...Array(12)].map((_, i) => {
+                  const angle = (i * 30) * Math.PI / 180
+                  const distance = 50 + Math.random() * 30
+                  return (
+                    <motion.div
+                      key={i}
+                      className="absolute w-2 h-2 rounded-full"
+                      style={{
+                        background: `hsl(${15 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`,
+                        left: '-4px',
+                        top: '-4px'
+                      }}
+                      animate={{
+                        x: [0, Math.cos(angle) * distance],
+                        y: [0, Math.sin(angle) * distance],
+                        opacity: [1, 0],
+                        scale: [1, 0]
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        ease: "easeOut",
+                        delay: Math.random() * 0.2
+                      }}
+                    />
+                  )
+                })}
+                
+                {/* Ground impact ripple */}
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    border: '2px solid rgba(139, 69, 19, 0.8)',
+                    width: '20px',
+                    height: '20px',
+                    left: '-10px',
+                    top: '-10px'
+                  }}
+                  animate={{
+                    scale: [0, 15],
+                    opacity: [0.8, 0]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    ease: "easeOut",
+                    delay: 0.3
                   }}
                 />
               </motion.div>
