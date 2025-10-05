@@ -381,16 +381,29 @@ export default function App(){
 
   // Convert lat/lng to screen coordinates for asteroid animation
   const getScreenPosition = (latlng) => {
-    if (!mapRef.current || !latlng) return { x: '50%', y: '50%' }
+    if (!mapRef.current || !latlng) {
+      console.warn('Map ref not ready or no coordinates provided, using center fallback')
+      return { x: '50%', y: '50%' }
+    }
     
-    const map = mapRef.current
-    const point = map.latLngToContainerPoint([latlng.lat, latlng.lng])
-    const mapContainer = map.getContainer()
-    const rect = mapContainer.getBoundingClientRect()
-    
-    return {
-      x: `${(point.x / rect.width) * 100}%`,
-      y: `${(point.y / rect.height) * 100}%`
+    try {
+      const map = mapRef.current
+      const point = map.latLngToContainerPoint([latlng.lat, latlng.lng])
+      const mapContainer = map.getContainer()
+      const rect = mapContainer.getBoundingClientRect()
+      
+      const x = (point.x / rect.width) * 100
+      const y = (point.y / rect.height) * 100
+      
+      console.log(`Impact coords: ${latlng.lat}, ${latlng.lng} -> Screen: ${x.toFixed(1)}%, ${y.toFixed(1)}%`)
+      
+      return {
+        x: `${x}%`,
+        y: `${y}%`
+      }
+    } catch (error) {
+      console.error('Error converting coordinates to screen position:', error)
+      return { x: '50%', y: '50%' }
     }
   }
 
@@ -620,7 +633,7 @@ export default function App(){
       </aside>
 
       <main className="flex-1 relative">
-        <MapContainer center={mapCenter} zoom={2} className="h-full" whenCreated={m=>mapRef.current=m}>
+        <MapContainer center={mapCenter} zoom={2} className="h-full" ref={mapRef}>
           <TileLayer 
             url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" 
             attribution="Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community" 
