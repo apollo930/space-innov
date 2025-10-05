@@ -363,12 +363,6 @@ export default function ResultCard({ results }){
                   value={results.tsunamiDeaths.toLocaleString()} 
                   unit="people" 
                 />
-                <StatRow 
-                  icon="🏝️" 
-                  label="Affected Coastlines" 
-                  value={results.tsunamiAffectedCoasts} 
-                  unit="regions" 
-                />
                 <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
                   🌊 Ocean impacts generate devastating tsunamis that can travel across entire ocean basins, 
                   affecting coastlines thousands of kilometers away. Wave height decreases with distance but remains dangerous.
