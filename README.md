@@ -1,9 +1,9 @@
-# Asteroid Launcher — Full React Project
+# Meteoroid Launcher — NASA Space Challenge
 
-This is a small educational demo that lets you click a world map to simulate asteroid impacts. Values are approximate and for demonstration only.
+This is a small educational demo that lets you click a world map to simulate asteroid impacts. Values are approximate.
 
 ## Requirements
-- Node 18+ recommended
+- Node 18+
 
 ## Install & run
 1. `npm install`
