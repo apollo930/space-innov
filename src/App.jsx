@@ -42,9 +42,71 @@ export default function App(){
   const [results, setResults] = useState(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [showExplosion, setShowExplosion] = useState(false)
+  const [isCalculating, setIsCalculating] = useState(false)
   const mapRef = useRef(null)
 
-  const computeImpact = (latlng, s = settings) => {
+  // Fetch real population density from WorldPop API
+  const fetchPopulationDensity = async (lat, lng) => {
+    try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      
+      const url = new URL('https://worldpop.arcgis.com/arcgis/rest/services/WorldPop_Population_Density_1km/ImageServer/identify')
+      url.searchParams.append('geometry', JSON.stringify({x: lng, y: lat}))
+      url.searchParams.append('geometryType', 'esriGeometryPoint')
+      url.searchParams.append('sr', '4326')
+      url.searchParams.append('returnCatalogItems', 'false')
+      url.searchParams.append('returnGeometry', 'false')
+      url.searchParams.append('f', 'json')
+      
+      const response = await fetch(url, { 
+        signal: controller.signal,
+        mode: 'cors' 
+      })
+      clearTimeout(timeoutId)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      
+      // WorldPop returns population density per km²
+      // Handle various response formats and null values
+      let density = data.value !== null && data.value !== undefined ? data.value : null
+      
+      // Check for 'noData' string which indicates water/uninhabited areas
+      if (data.value === 'noData' || data.value === 'NoData') {
+        console.log(`Impact location over water/uninhabited area (${lat.toFixed(3)}, ${lng.toFixed(3)}), using 0 population density`)
+        return 0
+      }
+      
+      if (density === null && data.results && data.results.length > 0) {
+        density = data.results[0].value
+        if (density === 'noData' || density === 'NoData') {
+          console.log(`Impact location over water/uninhabited area (${lat.toFixed(3)}, ${lng.toFixed(3)}), using 0 population density`)
+          return 0
+        }
+      }
+      
+      // Use global average if no data available (API error, not water)
+      if (density === null || density === undefined || isNaN(density)) {
+        console.log(`No population data for coordinates (${lat.toFixed(3)}, ${lng.toFixed(3)}), using global average`)
+        return 57 // Global average
+      }
+      
+      return Math.max(0, Math.round(density)) // Ensure non-negative integer
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.warn('Population API request timeout')
+      } else {
+        console.warn('Failed to fetch population data:', error.message)
+      }
+      return 57 // Fallback to global average
+    }
+  }
+
+  const computeImpact = async (latlng, s = settings) => {
     const d = Number(s.diam)
     const r = d/2
     const volume = (4/3)*Math.PI*Math.pow(r,3)
@@ -54,6 +116,9 @@ export default function App(){
     const megatons = energy / 4.184e15
     const gigatons = megatons / 1000
     const impactAngleRad = (s.angle * Math.PI) / 180 // Convert degrees to radians
+    
+    // Fetch real population density for impact location
+    const popDensity = await fetchPopulationDensity(latlng.lat, latlng.lng)
     
     // Basic impact calculations with angle corrections
     const baseCraterDiameter = 0.02 * Math.pow(energy, 1/3.4)
@@ -69,10 +134,7 @@ export default function App(){
     const blastRadius = craterDiameter * 2.5
     const willAirburst = (d < 200 && s.speed > 11 && s.angle > 15)
     
-    // Population density (people per km²) - simplified estimate based on global average
-    const popDensity = 57 // global average, varies by location
-    
-    // Crater effects
+    // Crater effects (using real population density)
     const craterArea = Math.PI * Math.pow(craterDiameter/2000, 2) // km²
     const craterVaporized = Math.round(craterArea * popDensity)
     
@@ -219,7 +281,10 @@ export default function App(){
       deflectionMegatons,
       deflectionBombComparison: bombComparison,
       deflectionImpactAngle: s.angle,
-      deflectionAngleEfficiency: (angleEfficiency * 100).toFixed(1)
+      deflectionAngleEfficiency: (angleEfficiency * 100).toFixed(1),
+      
+      // Population data
+      populationDensity: Math.round(popDensity)
     }
   }
 
@@ -246,10 +311,18 @@ export default function App(){
       setShowExplosion(true)
       
       // Show explosion briefly, then calculate results
-      setTimeout(() => {
-        const res = computeImpact(selectedLocation)
-        setResults(res)
-        setShowExplosion(false)
+      setTimeout(async () => {
+        setIsCalculating(true)
+        try {
+          const res = await computeImpact(selectedLocation)
+          setResults(res)
+          setShowExplosion(false)
+        } catch (error) {
+          console.error('Failed to compute impact:', error)
+          setShowExplosion(false)
+        } finally {
+          setIsCalculating(false)
+        }
       }, 500)
     }, 1000)
   }
@@ -269,11 +342,15 @@ export default function App(){
     }
   }
 
-  const handleSettingsChange = (partial) => {
+  const handleSettingsChange = async (partial) => {
     setSettings(prev => ({...prev,...partial}))
     if (selectedLocation && results) {
-      const res = computeImpact(selectedLocation, {...settings,...partial})
-      setResults(res)
+      try {
+        const res = await computeImpact(selectedLocation, {...settings,...partial})
+        setResults(res)
+      } catch (error) {
+        console.error('Failed to compute impact with new settings:', error)
+      }
     }
   }
 
@@ -431,7 +508,40 @@ export default function App(){
         </AnimatePresence>
 
         <AnimatePresence>
-          {results && !isAnimating && !showExplosion && (
+          {isCalculating && !isAnimating && !showExplosion && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 p-4 rounded-lg"
+            >
+              <div className="flex items-center gap-3">
+                <motion.div
+                  className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full"
+                  animate={{ 
+                    rotate: [0, 360]
+                  }}
+                  transition={{ 
+                    duration: 1, 
+                    repeat: Infinity,
+                    ease: "linear" 
+                  }}
+                />
+                <div>
+                  <div className="font-bold text-blue-800">
+                    Calculating Impact Effects...
+                  </div>
+                  <div className="text-sm text-blue-600">
+                    Fetching real population data from WorldPop
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {results && !isAnimating && !showExplosion && !isCalculating && (
             <motion.div
               initial={{ opacity: 0, y: 20, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

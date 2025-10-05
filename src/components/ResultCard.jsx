@@ -105,6 +105,12 @@ export default function ResultCard({ results }){
             <StatRow icon="⚖️" label="Mass" value={results.mass.toExponential(2)} unit="kg" />
             <StatRow icon="⚡" label="Energy" value={results.energy.toExponential(2)} unit="J" />
             <StatRow icon="📅" label="Impact Frequency" value={`Every ${results.impactFrequency.toLocaleString()}`} unit="years" />
+            <StatRow 
+              icon="👥" 
+              label="Population Density" 
+              value={results.populationDensity?.toLocaleString() || 'Unknown'} 
+              unit="people/km²" 
+            />
             {results.hurricaneComparison > 1 && (
               <StatRow 
                 icon="🌀" 
