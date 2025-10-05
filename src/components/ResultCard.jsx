@@ -133,13 +133,35 @@ export default function ResultCard({ results }){
               unit="ft deep" 
             />
             <StatRow 
-              icon="💀" 
+              icon="�" 
+              label="Impact Angle" 
+              value={results.deflectionImpactAngle} 
+              unit="degrees" 
+            />
+            <StatRow 
+              icon="🔄" 
+              label="Crater Shape" 
+              value={results.craterShape} 
+              unit="" 
+            />
+            <StatRow 
+              icon="📊" 
+              label="Angle Efficiency" 
+              value={results.craterAngleScaling} 
+              unit="% of vertical" 
+            />
+            <StatRow 
+              icon="�💀" 
               label="Vaporized in Crater" 
               value={results.craterVaporized.toLocaleString()} 
               unit="people" 
             />
             <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
-              💡 The crater represents the primary excavation zone where everything is completely vaporized or destroyed.
+              �️ Impact angle dramatically affects crater formation:
+              • 90°: Circular crater, maximum depth
+              • 60°: Slightly elliptical
+              • 30°: Highly elliptical, shallower
+              • &lt;15°: May ricochet or create elongated scar
             </div>
           </motion.div>
         )
@@ -330,15 +352,29 @@ export default function ResultCard({ results }){
               unit={results.deflectionMegatons >= 0.001 ? 'megatons' : ''} 
             />
             <StatRow 
+              icon="📐" 
+              label="Impact Angle" 
+              value={results.deflectionImpactAngle} 
+              unit="degrees" 
+            />
+            <StatRow 
+              icon="⚡" 
+              label="Deflection Efficiency" 
+              value={results.deflectionAngleEfficiency} 
+              unit="%" 
+            />
+            <StatRow 
               icon="🌌" 
               label="PHA Threshold" 
               value="0.05" 
               unit="AU (7.5M km)" 
             />
             <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
-              🚀 Deflection calculations use the Potentially Hazardous Asteroid (PHA) threshold of 0.05 AU.
-              This represents the minimum safe distance - asteroids closer than this are considered PHAs.
-              Energy requirements assume detection at 1+ AU distance for sufficient deflection time.
+              🚀 Deflection calculations use the PHA threshold of 0.05 AU (7.5M km). Impact angle affects deflection efficiency:
+              • 90° (perpendicular): Maximum efficiency
+              • 45°: ~71% efficiency
+              • 30°: ~50% efficiency
+              • Low angles: Much harder to deflect laterally
             </div>
           </motion.div>
         )

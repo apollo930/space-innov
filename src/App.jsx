@@ -53,10 +53,19 @@ export default function App(){
     const energy = 0.5 * mass * v * v
     const megatons = energy / 4.184e15
     const gigatons = megatons / 1000
+    const impactAngleRad = (s.angle * Math.PI) / 180 // Convert degrees to radians
     
-    // Basic impact calculations
-    const craterDiameter = 0.02 * Math.pow(energy, 1/3.4)
-    const craterDepth = craterDiameter * 0.2
+    // Basic impact calculations with angle corrections
+    const baseCraterDiameter = 0.02 * Math.pow(energy, 1/3.4)
+    
+    // Impact angle scaling factors:
+    // - Vertical impacts (90°) create circular craters with maximum depth
+    // - Oblique impacts create elliptical craters with reduced depth
+    // - Very shallow impacts (<15°) may not form proper craters
+    const angleScaling = Math.pow(Math.sin(impactAngleRad), 0.67) // Empirical scaling from impact studies
+    const craterDiameter = baseCraterDiameter * (0.3 + 0.7 * angleScaling) // Minimum 30% of vertical impact
+    const craterDepth = craterDiameter * 0.2 * angleScaling // Depth more affected by angle
+    
     const blastRadius = craterDiameter * 2.5
     const willAirburst = (d < 200 && s.speed > 11 && s.angle > 15)
     
@@ -122,10 +131,17 @@ export default function App(){
     const detectionDistance = Math.max(1 * AU, phaThreshold * 20) // At least 1 AU or 20x PHA threshold
     
     // Required deflection angle to miss Earth by PHA threshold distance
-    const deflectionAngle = phaThreshold / detectionDistance // radians
+    const baseDeflectionAngle = phaThreshold / detectionDistance // radians
     
-    // Change in velocity needed for deflection
-    const deltaV = currentVelocity * deflectionAngle // m/s
+    // Impact angle affects deflection efficiency:
+    // - Perpendicular impacts (90°) are most efficient for deflection
+    // - Grazing impacts (low angles) are less efficient
+    // - Very steep impacts (near 0°) are hardest to deflect laterally
+    const angleEfficiency = Math.sin(impactAngleRad) // Sine gives efficiency factor
+    const effectiveDeflectionAngle = baseDeflectionAngle / Math.max(angleEfficiency, 0.1) // Avoid division by zero
+    
+    // Change in velocity needed for deflection (accounting for impact angle)
+    const deltaV = currentVelocity * effectiveDeflectionAngle // m/s
     
     // Energy required for deflection
     const deflectionEnergy = 0.5 * mass * deltaV * deltaV // Joules
@@ -156,6 +172,8 @@ export default function App(){
       gigatons,
       craterDiameter, 
       craterDepth,
+      craterAngleScaling: (angleScaling * 100).toFixed(1),
+      craterShape: s.angle > 60 ? 'Circular' : s.angle > 30 ? 'Elliptical' : 'Highly Elongated',
       blastRadius, 
       willAirburst,
       impactSpeed: v * 2.237, // convert to mph
@@ -199,7 +217,9 @@ export default function App(){
       deflectionDeltaV: deltaV.toFixed(2),
       deflectionEnergy,
       deflectionMegatons,
-      deflectionBombComparison: bombComparison
+      deflectionBombComparison: bombComparison,
+      deflectionImpactAngle: s.angle,
+      deflectionAngleEfficiency: (angleEfficiency * 100).toFixed(1)
     }
   }
 
