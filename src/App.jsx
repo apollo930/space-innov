@@ -111,6 +111,42 @@ export default function App(){
     // Energy comparisons
     const hurricaneComparison = energy / (1.5e16) // hurricane releases ~1.5e16 J per day
     
+    // Deflection calculations (using PHA threshold of 0.05 AU)
+    const earthRadius = 6371000 // meters
+    const AU = 149597870700 // meters (1 Astronomical Unit)
+    const phaThreshold = 0.05 * AU // 0.05 AU = PHA definition threshold
+    const currentVelocity = v // m/s (impact velocity)
+    
+    // For deflection calculation, assume we detect the asteroid at a reasonable distance
+    // Typical detection might be at 1-10 AU depending on size and survey capabilities
+    const detectionDistance = Math.max(1 * AU, phaThreshold * 20) // At least 1 AU or 20x PHA threshold
+    
+    // Required deflection angle to miss Earth by PHA threshold distance
+    const deflectionAngle = phaThreshold / detectionDistance // radians
+    
+    // Change in velocity needed for deflection
+    const deltaV = currentVelocity * deflectionAngle // m/s
+    
+    // Energy required for deflection
+    const deflectionEnergy = 0.5 * mass * deltaV * deltaV // Joules
+    const deflectionMegatons = deflectionEnergy / 4.184e15
+    
+    // Nuclear weapon comparisons
+    const littleBoy = 0.015 // 15 kilotons in megatons
+    const modernNuke = 0.1 // 100 kilotons
+    const tsarBomba = 50 // 50 megatons
+    
+    let bombComparison = ''
+    if (deflectionMegatons >= tsarBomba) {
+      bombComparison = `${(deflectionMegatons / tsarBomba).toFixed(1)}x Tsar Bomba`
+    } else if (deflectionMegatons >= modernNuke) {
+      bombComparison = `${(deflectionMegatons / modernNuke).toFixed(1)}x modern nukes`
+    } else if (deflectionMegatons >= littleBoy) {
+      bombComparison = `${(deflectionMegatons / littleBoy).toFixed(1)}x Hiroshima bombs`
+    } else {
+      bombComparison = `${(deflectionMegatons * 1000).toFixed(1)} kilotons`
+    }
+    
     return { 
       lat: latlng.lat, 
       lng: latlng.lng, 
@@ -157,7 +193,13 @@ export default function App(){
       
       // Comparisons
       impactFrequency,
-      hurricaneComparison
+      hurricaneComparison,
+      
+      // Deflection data
+      deflectionDeltaV: deltaV.toFixed(2),
+      deflectionEnergy,
+      deflectionMegatons,
+      deflectionBombComparison: bombComparison
     }
   }
 

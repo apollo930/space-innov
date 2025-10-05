@@ -43,7 +43,8 @@ export default function ResultCard({ results }){
     { id: 'fireball', label: 'Fireball', icon: '🔥' },
     { id: 'shockwave', label: 'Shock Wave', icon: '💥' },
     { id: 'wind', label: 'Wind', icon: '🌪️' },
-    { id: 'earthquake', label: 'Earthquake', icon: '🌍' }
+    { id: 'earthquake', label: 'Earthquake', icon: '🌍' },
+    { id: 'deflection', label: 'Deflection', icon: '🚀' }
   ]
 
   const containerVariants = {
@@ -299,6 +300,45 @@ export default function ResultCard({ results }){
             />
             <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
               🌍 Large impacts generate seismic waves that can be felt hundreds of miles away.
+            </div>
+          </motion.div>
+        )
+      
+      case 'deflection':
+        return (
+          <motion.div className="space-y-3" variants={containerVariants}>
+            <StatRow 
+              icon="🚀" 
+              label="Required Δv" 
+              value={results.deflectionDeltaV} 
+              unit="m/s"
+              isHighlight 
+            />
+            <StatRow 
+              icon="💥" 
+              label="Deflection Energy" 
+              value={results.deflectionBombComparison} 
+              unit="" 
+            />
+            <StatRow 
+              icon="⚡" 
+              label="Energy (Megatons)" 
+              value={results.deflectionMegatons < 0.001 ? 
+                (results.deflectionMegatons * 1000).toFixed(3) + ' kilotons' : 
+                results.deflectionMegatons.toFixed(3)
+              } 
+              unit={results.deflectionMegatons >= 0.001 ? 'megatons' : ''} 
+            />
+            <StatRow 
+              icon="🌌" 
+              label="PHA Threshold" 
+              value="0.05" 
+              unit="AU (7.5M km)" 
+            />
+            <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
+              🚀 Deflection calculations use the Potentially Hazardous Asteroid (PHA) threshold of 0.05 AU.
+              This represents the minimum safe distance - asteroids closer than this are considered PHAs.
+              Energy requirements assume detection at 1+ AU distance for sufficient deflection time.
             </div>
           </motion.div>
         )
