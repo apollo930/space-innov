@@ -44,6 +44,7 @@ export default function ResultCard({ results }){
     { id: 'shockwave', label: 'Shock Wave', icon: '💥' },
     { id: 'wind', label: 'Wind', icon: '🌪️' },
     { id: 'earthquake', label: 'Earthquake', icon: '🌍' },
+    { id: 'tsunami', label: 'Tsunami', icon: '🌊' },
     { id: 'deflection', label: 'Deflection', icon: '🚀' }
   ]
 
@@ -110,6 +111,12 @@ export default function ResultCard({ results }){
               label="Population Density" 
               value={results.populationDensity?.toLocaleString() || 'Unknown'} 
               unit="people/km²" 
+            />
+            <StatRow 
+              icon={results.isOceanImpact ? "🌊" : "🏔️"} 
+              label="Impact Location" 
+              value={results.isOceanImpact ? "Ocean/Water" : "Land"} 
+              unit={results.isOceanImpact ? "(Tsunami risk)" : "(Direct damage)"} 
             />
             {results.hurricaneComparison > 1 && (
               <StatRow 
@@ -329,6 +336,51 @@ export default function ResultCard({ results }){
             <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
               🌍 Large impacts generate seismic waves that can be felt hundreds of miles away.
             </div>
+          </motion.div>
+        )
+      
+      case 'tsunami':
+        return (
+          <motion.div className="space-y-3" variants={containerVariants}>
+            {results.isOceanImpact ? (
+              <>
+                <StatRow 
+                  icon="🌊" 
+                  label="Tsunami Wave Height" 
+                  value={results.tsunamiHeight.toFixed(1)} 
+                  unit="meters"
+                  isHighlight 
+                />
+                <StatRow 
+                  icon="📏" 
+                  label="Tsunami Radius" 
+                  value={Math.round(results.tsunamiRadius).toLocaleString()} 
+                  unit="km" 
+                />
+                <StatRow 
+                  icon="💀" 
+                  label="Coastal Deaths" 
+                  value={results.tsunamiDeaths.toLocaleString()} 
+                  unit="people" 
+                />
+                <StatRow 
+                  icon="🏝️" 
+                  label="Affected Coastlines" 
+                  value={results.tsunamiAffectedCoasts} 
+                  unit="regions" 
+                />
+                <div className="text-xs text-gray-600 mt-2 p-2 bg-white/30 rounded border">
+                  🌊 Ocean impacts generate devastating tsunamis that can travel across entire ocean basins, 
+                  affecting coastlines thousands of kilometers away. Wave height decreases with distance but remains dangerous.
+                </div>
+              </>
+            ) : (
+              <div className="text-center p-4">
+                <div className="text-4xl mb-2">🏔️</div>
+                <div className="font-medium text-gray-700">Land Impact</div>
+                <div className="text-sm text-gray-500 mt-1">No tsunami generated from land impacts</div>
+              </div>
+            )}
           </motion.div>
         )
       

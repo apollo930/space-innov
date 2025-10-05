@@ -172,6 +172,45 @@ export default function App(){
     const earthquakeArea = Math.PI * Math.pow(earthquakeRadius/1000, 2) // km²
     const earthquakeDeaths = Math.round(earthquakeArea * popDensity * 0.001) // much lower fatality rate
     
+    // Tsunami calculations (for ocean impacts)
+    const isOceanImpact = popDensity === 0 // If no population, likely water
+    let tsunamiHeight = 0
+    let tsunamiRadius = 0
+    let tsunamiDeaths = 0
+    let tsunamiAffectedCoasts = 0
+    
+    if (isOceanImpact && megatons > 1) {
+      // Tsunami wave height scales with impact energy and water depth
+      // Simplified model based on asteroid tsunami research
+      const averageOceanDepth = 3800 // meters (average ocean depth)
+      tsunamiHeight = Math.pow(energy / 4.184e15, 0.25) * 10 // meters wave height
+      tsunamiRadius = Math.sqrt(energy / 4.184e12) * 500 // km propagation radius
+      
+      // Coastal population affected (very rough estimate)
+      const coastalDensity = 150 // average coastal population density (higher than global)
+      const affectedCoastLength = tsunamiRadius * Math.PI * 2 // approximate coastal perimeter
+      const coastalPenetration = Math.min(tsunamiHeight * 100, 10000) // meters inland penetration
+      const tsunamiArea = (affectedCoastLength * coastalPenetration) / 1000000 // km²
+      
+      tsunamiDeaths = Math.round(tsunamiArea * coastalDensity * 0.1) // 10% fatality rate
+      tsunamiAffectedCoasts = Math.round(tsunamiRadius / 1000) // number of countries potentially affected
+    }
+    
+    // Impact probability analysis
+    const earthSurfaceArea = 510100000 // km² (Earth's surface area)
+    const oceanArea = 361900000 // km² (71% of Earth is ocean)
+    const landArea = earthSurfaceArea - oceanArea
+    
+    const probabilityOcean = (oceanArea / earthSurfaceArea) * 100 // ~71%
+    const probabilityLand = (landArea / earthSurfaceArea) * 100 // ~29%
+    
+    // Population-weighted impact probability
+    const globalPopulation = 8000000000 // ~8 billion people
+    const averageLandDensity = globalPopulation / landArea // people per km² on land
+    const urbanArea = 1500000 // km² (approximate global urban area)
+    const probabilityUrban = (urbanArea / earthSurfaceArea) * 100 // ~0.3%
+    const probabilityRural = probabilityLand - probabilityUrban
+    
     // Impact frequency (very rough estimates)
     const impactFrequency = megatons > 10000 ? 65000000 : 
                            megatons > 1000 ? 650000 :
@@ -270,6 +309,19 @@ export default function App(){
       earthquakeMagnitude,
       earthquakeDeaths,
       earthquakeRadius,
+      
+      // Tsunami effects
+      isOceanImpact,
+      tsunamiHeight,
+      tsunamiRadius,
+      tsunamiDeaths,
+      tsunamiAffectedCoasts,
+      
+      // Impact probabilities
+      probabilityOcean: probabilityOcean.toFixed(1),
+      probabilityLand: probabilityLand.toFixed(1),
+      probabilityUrban: probabilityUrban.toFixed(2),
+      probabilityRural: probabilityRural.toFixed(1),
       
       // Comparisons
       impactFrequency,
